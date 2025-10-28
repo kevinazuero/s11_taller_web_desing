@@ -9,26 +9,49 @@ const connectMongo = require('./config/dbMongo');
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/task');
 const Person = require('./routes/person');
+const createApolloServer = require('./graphql');
 
 const app = express();
-app.use(helmet());
-app.use(express.json()); //vas a interpretar las peticiones en json
-app.use(cookieParser()); // para leer cookies enviadas por le cliente
-app.use(cors({ origin: 'http://localhost:5173', credentials: true })); // aceptto peticiones de este front
 
-app.use('/api/auth', authRoutes); // rutas de auth
-app.use('/api/tasks', taskRoutes);
-app.use('/api/persons', Person);
+app.use(helmet({
+  contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
+  crossOriginEmbedderPolicy: false
+}));
+
+app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cookieParser());
+
+// ✅ RUTAS REST (con express.json)
+app.use('/api/auth', express.json(), authRoutes);
+app.use('/api/tasks', express.json(), taskRoutes);
+app.use('/api/persons', express.json(), Person);
 
 const PORT = process.env.PORT || 4000;
 
 async function start() {
   try {
     await sequelize.authenticate();
-    await sequelize.sync(); // en dev: crea tablas si no existen
+    await sequelize.sync();
     console.log('Postgres conectado');
     await connectMongo();
-    app.listen(PORT, () => console.log('Server running on', PORT));
+
+    const apolloServer = createApolloServer();
+    await apolloServer.start();
+
+    // ✅ GraphQL (sin express.json, Apollo maneja el parsing)
+    apolloServer.applyMiddleware({
+      app,
+      path: '/graphql',
+      cors: {
+        origin: 'http://localhost:5173',
+        credentials: true
+      }
+    });
+
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`🚀 GraphQL endpoint: http://localhost:${PORT}/graphql`);
+    });
   } catch (err) {
     console.error('Error iniciando servidor', err);
   }

@@ -8,9 +8,9 @@ export default function PersonTable({ onEdit, onDelete }) {
   const dataTableRef = useRef(null);
 
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true; // Para evitar actualizaciones si el componente se desmonta
 
-    async function loadData() {
+    async function loadData() { 
       try {
         const res = await api.get("/persons");
         const data = res.data;
@@ -74,7 +74,7 @@ export default function PersonTable({ onEdit, onDelete }) {
 
         // Botón Editar
         $(tableRef.current).on("click", ".edit-btn", function (e) {
-          e.preventDefault();
+          e.preventDefault(); // Evitar el comportamiento por defecto del botón 
           const id = parseInt($(this).data("id"));
           const person = data.find(p => p.id === id);
           if (person && onEdit) {
