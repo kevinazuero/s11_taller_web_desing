@@ -5,7 +5,6 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const sequelize = require('./config/dbPostgres');
-const connectMongo = require('./config/dbMongo');
 const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/task');
 const Person = require('./routes/person');
@@ -33,7 +32,6 @@ async function start() {
     await sequelize.authenticate();
     await sequelize.sync();
     console.log('Postgres conectado');
-    await connectMongo();
 
     const apolloServer = createApolloServer();
     await apolloServer.start();
